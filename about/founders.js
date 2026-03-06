@@ -7,6 +7,11 @@ exports.getFounders = async () => {
 
         return {
             statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET"
+            },
             body: JSON.stringify(rows)
         };
 
