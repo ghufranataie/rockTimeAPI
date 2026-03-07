@@ -14,23 +14,24 @@ exports.getEvents = async () => {
         left join bookings bk on bk.bokTicket = st.shtID
         group by shwID order by shwID DESC`);
 
+        // Step 2: Fetch tickets and bookings for each show
         for (let show of shows) {
+            // Fetch tickets for the show
             const [tickets] = await db.execute(
-                `SELECT shtID, shtType, shtTotalTickets, shtPrice 
-                FROM showTickets 
-                WHERE shtShowID = ?`,
+                `SELECT shtID, shtType, shtTotalTickets, shtPrice FROM showTickets WHERE shtShowID = ?`,
                 [show.shwID]
             );
 
-            show.tickets = tickets;
-        }
+            // Fetch bookings for each ticket
+            for (let ticket of tickets) {
+                const [bookings] = await db.execute(
+                    `SELECT bokSeatNumber, bokStatus FROM bookings WHERE bokTicket = ?`,
+                    [ticket.shtID]
+                );
+                ticket.bookings = bookings; // attach bookings to ticket
+            }
 
-        for (let booking of shows){
-            const [bookings] = await db.execute(
-                `select bokSeatNumber, bokStatus from bookings WHERE bokTicket = ?`,
-                [booking.shtID]
-            );
-            booking.shows = bookings;
+            show.tickets = tickets; // attach tickets to show
         }
 
         return {
@@ -54,5 +55,3 @@ exports.getEvents = async () => {
         };
     }
 };
-
-
