@@ -3,7 +3,7 @@ const getDBConnection = require('../config/db');
 exports.getEvents = async () => {
     try {
         const db = await getDBConnection();
-        const [rows] = await db.execute(`select shwID, shwTitle, shwArtist, shwOrganizer, orgCompanyName, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails,
+        const [shows] = await db.execute(`select shwID, shwTitle, shwArtist, shwOrganizer, orgCompanyName, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails,
             case
                 when s.shwDate < curdate() then 'Passed'
                 when SUM(CASE WHEN bokStatus = 'Booked' THEN 1 ELSE 0 END) < SUM(st.shtTotalTickets) then 'Availalbe'
@@ -14,6 +14,17 @@ exports.getEvents = async () => {
         left join bookings bk on bk.bokTicket = st.shtID
         group by shwID order by shwID DESC`);
 
+        for (let show of shows) {
+            const [tickets] = await db.execute(
+                `SELECT shtType, shtTotalTickets, shtPrice 
+                FROM showTickets 
+                WHERE shtShowID = ?`,
+                [show.shwID]
+            );
+
+            show.tickets = tickets;
+        }
+        
         return {
             statusCode: 200,
             headers: {
@@ -21,7 +32,7 @@ exports.getEvents = async () => {
                 "Access-Control-Allow-Headers": "*",
                 "Access-Control-Allow-Methods": "OPTIONS,GET"
             },
-            body: JSON.stringify(rows)
+            body: JSON.stringify(shows)
         };
 
     } catch (error) {
