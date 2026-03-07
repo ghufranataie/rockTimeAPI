@@ -1,6 +1,6 @@
 const getDBConnection = require('../config/db');
 
-exports.getFounders = async () => {
+exports.getEvents = async () => {
     try {
         const db = await getDBConnection();
         const [rows] = await db.execute(`select shwID, shwTitle, shwArtist, shwOrganizer, orgCompanyName, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails,
