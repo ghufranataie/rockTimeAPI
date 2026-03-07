@@ -16,7 +16,7 @@ exports.getEvents = async () => {
 
         for (let show of shows) {
             const [tickets] = await db.execute(
-                `SELECT shtType, shtTotalTickets, shtPrice 
+                `SELECT shtID, shtType, shtTotalTickets, shtPrice 
                 FROM showTickets 
                 WHERE shtShowID = ?`,
                 [show.shwID]
@@ -24,7 +24,15 @@ exports.getEvents = async () => {
 
             show.tickets = tickets;
         }
-        
+
+        for (let booking of tickets){
+            const [bookings] = await db.execute(
+                `select bokSeatNumber, bokStatus from bookings WHERE bokTicket = ?`,
+                [booking.shtID]
+            );
+            booking.bookings = bookings;
+        }
+
         return {
             statusCode: 200,
             headers: {
