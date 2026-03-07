@@ -5,9 +5,23 @@ exports.createUser = async (event) => {
     const db = await getDBConnection();
     const body = JSON.parse(event.body);
 
+    if (!body.usrName || !body.usrPass) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ message: "Username and password are required" })
+        };
+    }
+
+    const hashedPassword = await argon2.hash(body.usrPass);
+
+    const [result1] = await db.execute(
+        "INSERT INTO users (usrName, usrPass, usrOwner, usrRole, usrBranch, usrEmail, usrToken, usrFCP, usrStatus, usrEntryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [body.usrName, hashedPassword, body.usrOwner, body.usrRole, body.usrBranch, body.usrEmail, body.usrToken, body.usrFCP, body.usrStatus, new Date()]
+    );
+
     const [result] = await db.execute(
         "INSERT INTO users (usrName, usrPass, usrOwner, usrRole, usrBranch, usrEmail, usrToken, usrFCP, usrStatus, usrEntryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [body.usrName, await argon2.hash(body.usrPass), body.usrOwner, body.usrRole, body.usrBranch, body.usrEmail, body.usrToken, body.usrFCP, body.usrStatus, new Date()]
+        [body.usrName, hashedPassword, body.usrOwner, body.usrRole, body.usrBranch, body.usrEmail, body.usrToken, body.usrFCP, body.usrStatus, new Date()]
     );
 
     return {
