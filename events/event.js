@@ -25,12 +25,12 @@ exports.getEvents = async () => {
             show.tickets = tickets;
         }
 
-        for (let booking of tickets){
+        for (let booking of shows){
             const [bookings] = await db.execute(
                 `select bokSeatNumber, bokStatus from bookings WHERE bokTicket = ?`,
                 [booking.shtID]
             );
-            booking.bookings = bookings;
+            booking.shows = bookings;
         }
 
         return {
@@ -54,3 +54,5 @@ exports.getEvents = async () => {
         };
     }
 };
+
+
