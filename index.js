@@ -1,6 +1,6 @@
 const founders = require('./about/founders');
 const events = require('./events/event');
-const users = require('./users/user');
+const users = require('./user/users');
 
 exports.handler = async (event) => {
     const method = event.httpMethod;
