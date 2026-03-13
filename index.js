@@ -13,7 +13,7 @@ exports.handler = async (event) => {
         if (resource === '/auth') {
             switch (method) {
                 case 'POST':
-                    return users.loginUser(event);
+                    return auth.loginUser(event);
                 
                 default:
                     return {
