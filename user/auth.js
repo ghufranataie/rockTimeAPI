@@ -10,7 +10,7 @@ exports.loginUser = async (event) => {
 
     // Fetch user by username
     const [rows] = await db.execute(
-        `SELECT * FROM users WHERE username = ?`,
+        `SELECT * FROM users WHERE usrName = ?`,
         [username]
     );
 
