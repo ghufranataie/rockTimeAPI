@@ -10,8 +10,8 @@ exports.loginUser = async (event) => {
 
     // Fetch user by username
     const [rows] = await db.execute(
-        `SELECT * FROM users WHERE usrName = ?`,
-        [username]
+        `SELECT * FROM users WHERE usrName = ? or usrEmail = ?`,
+        [username, username]
     );
 
     if (rows.length === 0) {
