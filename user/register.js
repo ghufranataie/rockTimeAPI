@@ -38,7 +38,7 @@ exports.registerUser = async (event) => {
         const hashedPassword = await argon2.hash(password);
         
         const [result] = await db.execute(
-            "INSERT INTO users (usrName, usrPass, usrFullName, usrEmail) VALUES (?, ?, ?, ?)",
+            "INSERT INTO users (usrName, usrPassword, usrFullName, usrEmail) VALUES (?, ?, ?, ?)",
             [username, hashedPassword, fullname, email]
         );
     
