@@ -1,10 +1,6 @@
 const getDBConnection = require('../config/db');
 const argon2 = require('argon2');
 
-
-
-
-
 exports.createUser = async (event) => {
     const db = await getDBConnection();
     const body = JSON.parse(event.body);
@@ -41,14 +37,10 @@ exports.createUser = async (event) => {
     };
 };
 
-
-
 exports.getUsers = async () => {
     const db = await getDBConnection();
 
-    const [rows] = await db.execute(`
-        SELECT usrID, concat(perName, ' ', perLastName) as usrFullName, perPhoto, usrName, usrRole, usrStatus, usrBranch, usrEmail, perPhone, usrToken, usrFCP, usrEntryDate from users 
-        join personal on personal.perID = users.usrOwner where usrRole != 'super'`);
+    const [rows] = await db.execute(`SELECT * from users`);
 
     return {
         statusCode: 200,
