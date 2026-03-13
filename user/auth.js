@@ -25,7 +25,7 @@ exports.loginUser = async (event) => {
 
     try {
         // Verify password with Argon2
-        const isPasswordValid = await argon2.verify(user.password, password);
+        const isPasswordValid = await argon2.verify(user.usrPassword, password);
 
         if (!isPasswordValid) {
             return {
@@ -41,8 +41,8 @@ exports.loginUser = async (event) => {
                 message: "Login successful",
                 user: {
                     id: user.id,
-                    username: user.username,
-                    email: user.email
+                    username: user.usrName,
+                    email: user.usrEmail
                     // omit password from response!
                 }
             })
