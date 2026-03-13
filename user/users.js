@@ -1,34 +1,47 @@
 const getDBConnection = require('../config/db');
 const argon2 = require('argon2');
 
+
+
+
+
 exports.createUser = async (event) => {
     const db = await getDBConnection();
     const body = JSON.parse(event.body);
 
-    if (!body.usrName || !body.usrPass) {
+    if (!body.usrEmail || !body.usrPass) {
         return {
             statusCode: 400,
-            body: JSON.stringify({ message: "Username and password are required" })
+            body: JSON.stringify({ message: "Email and password are required" })
+        };
+    }
+
+    const [existing] = await db.execute(
+        "SELECT usrEmail FROM users WHERE usrEmail = ?",
+        [body.usrEmail]
+    );
+
+    if (existing.length > 0) {
+        return {
+            statusCode: 409,
+            body: JSON.stringify({ message: "Email already exists" })
         };
     }
 
     const hashedPassword = await argon2.hash(body.usrPass);
 
-    const [result1] = await db.execute(
-        "INSERT INTO users (usrName, usrPass, usrOwner, usrRole, usrBranch, usrEmail, usrToken, usrFCP, usrStatus, usrEntryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [body.usrName, hashedPassword, body.usrOwner, body.usrRole, body.usrBranch, body.usrEmail, body.usrToken, body.usrFCP, body.usrStatus, new Date()]
-    );
-
     const [result] = await db.execute(
-        "INSERT INTO users (usrName, usrPass, usrOwner, usrRole, usrBranch, usrEmail, usrToken, usrFCP, usrStatus, usrEntryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [body.usrName, hashedPassword, body.usrOwner, body.usrRole, body.usrBranch, body.usrEmail, body.usrToken, body.usrFCP, body.usrStatus, new Date()]
+        "INSERT INTO users (usrPass, usrFullName, usrEmail) VALUES (?, ?, ?)",
+        [hashedPassword, body.usrFullName, body.usrEmail]
     );
 
     return {
-        statusCode: 201,
-        body: { id: result.insertId }
+        statusCode: 200,
+        body: JSON.stringify({ message: "success" })
     };
 };
+
+
 
 exports.getUsers = async () => {
     const db = await getDBConnection();

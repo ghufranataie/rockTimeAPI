@@ -1,5 +1,6 @@
 const founders = require('./about/founders');
 const events = require('./events/event');
+const users = 
 
 exports.handler = async (event) => {
     const method = event.httpMethod;
@@ -8,7 +9,14 @@ exports.handler = async (event) => {
 
     try {
 
-        //events
+        //Users
+        if (resource === '/users' && method === 'GET') {
+            return await events.getUsers(event);
+        }
+
+
+
+        //Events
         if (resource === '/events' && method === 'GET') {
             return await events.getEvents(event);
         }

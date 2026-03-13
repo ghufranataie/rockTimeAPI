@@ -6,7 +6,7 @@ exports.getEvents = async () => {
         const [shows] = await db.execute(`select shwID, shwTitle, shwArtist, shwOrganizer, orgCompanyName, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails,
             case
                 when s.shwDate < curdate() then 'Passed'
-                when SUM(CASE WHEN bokStatus = 'Booked' THEN 1 ELSE 0 END) < SUM(st.shtTotalTickets) then 'Availalbe'
+                when SUM(CASE WHEN bokStatus = 'Booked' THEN 1 ELSE 0 END) < SUM(st.shtTotalTickets) then 'Available'
             else 'Housefull' end AS availability
         from shows s
         join organizers o on o.orgID = s.shwOrganizer
@@ -30,7 +30,6 @@ exports.getEvents = async () => {
                 );
                 ticket.bookings = bookings; // attach bookings to ticket
             }
-
             show.tickets = tickets; // attach tickets to show
         }
 
