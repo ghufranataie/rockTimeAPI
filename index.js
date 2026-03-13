@@ -1,6 +1,6 @@
 const founders = require('./about/founders');
 const events = require('./events/event');
-const users = 
+const users = require('./users/user');
 
 exports.handler = async (event) => {
     const method = event.httpMethod;
@@ -13,10 +13,10 @@ exports.handler = async (event) => {
         if (resource === '/users') {
             switch (method) {
                 case 'GET':
-                    return events.getUsers(event);
+                    return users.getUsers(event);
 
                 case 'POST':
-                    return events.createUser(event);
+                    return users.createUser(event);
                 
                 default:
                     return {
