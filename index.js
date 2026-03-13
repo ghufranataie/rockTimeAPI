@@ -12,6 +12,8 @@ exports.handler = async (event) => {
         //Users
         if (resource === '/users' && method === 'GET') {
             return await events.getUsers(event);
+        }else if(resource === '/users' && method === 'POST'){
+            return await events.createUser(event);
         }
 
 
