@@ -1,6 +1,7 @@
 const founders = require('./about/founders');
 const events = require('./events/event');
 const users = require('./user/users');
+const auth = require('./user/auth');
 
 exports.handler = async (event) => {
     const method = event.httpMethod;
@@ -8,6 +9,19 @@ exports.handler = async (event) => {
     console.log("Event Recieved From API Gateway", JSON.stringify(event, null, 2));
 
     try {
+        // Login and Register
+        if (resource === '/auth') {
+            switch (method) {
+                case 'POST':
+                    return users.loginUser(event);
+                
+                default:
+                    return {
+                        statusCode: 405,
+                        body: JSON.stringify({ message: "Method not allowed" })
+                    };
+            }
+        }
 
         //Users
         if (resource === '/users') {
@@ -26,8 +40,7 @@ exports.handler = async (event) => {
             }
         }
 
-
-
+        
         //Events
         if (resource === '/events' && method === 'GET') {
             return await events.getEvents(event);
