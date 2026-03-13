@@ -17,6 +17,12 @@ exports.handler = async (event) => {
 
                 case 'POST':
                     return events.createUser(event);
+                
+                default:
+                    return {
+                        statusCode: 405,
+                        body: JSON.stringify({ message: "Method not allowed" })
+                    };
             }
         }
 
