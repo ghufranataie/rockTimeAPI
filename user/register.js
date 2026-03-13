@@ -23,7 +23,7 @@ exports.registerUser = async (event) => {
         const { fullname, email, password } = body;
         const username = generateRandomUsername();
 
-        // Fetch user by username
+        // Check if Exist user
         const [rows] = await db.execute(
             `SELECT * FROM users WHERE usrEmail = ?`,
             [email]
@@ -32,7 +32,7 @@ exports.registerUser = async (event) => {
         if (rows.length > 0) {
             return {
                 statusCode: 409, // Conflict
-                body: JSON.stringify({ message: "Email Already Exist" })
+                body: JSON.stringify({ message: "Email Already Exist", genUser: username })
             };
         }
         const hashedPassword = await argon2.hash(password);
