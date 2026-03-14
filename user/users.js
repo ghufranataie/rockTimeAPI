@@ -1,80 +1,85 @@
 const getDBConnection = require('../config/db');
 const argon2 = require('argon2');
 
-exports.createUser = async (event) => {
-    const db = await getDBConnection();
-    const body = JSON.parse(event.body);
+const corsHeaders = {
+    "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+    "Access-Control-Allow-Methods": "OPTIONS,POST"
+};
 
-    if (!body.usrEmail || !body.usrPass) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: "Email and password are required" })
-        };
+const response = (statusCode, body) => ({
+    statusCode,
+    headers: corsHeaders,
+    body: JSON.stringify(body)
+});
+
+const parseJsonBody = (rawBody) => {
+    if (!rawBody) return {};
+    try {
+        return JSON.parse(rawBody);
+    } catch {
+        return null;
+    }
+};
+
+// Login users using email, username or password
+exports.loginUser = async (event) => {
+    if (event?.httpMethod === "OPTIONS") {
+        return response(200, {});
     }
 
-    const [existing] = await db.execute(
-        "SELECT usrEmail FROM users WHERE usrEmail = ?",
-        [body.usrEmail]
-    );
+    try {
+        const body = parseJsonBody(event?.body);
+        if (!body) {
+            return response(400, { message: "Invalid JSON body" });
+        }
 
-    if (existing.length > 0) {
-        return {
-            statusCode: 409,
-            body: JSON.stringify({ message: "Email already exists" })
-        };
+        const db = await getDBConnection();
+
+        const username = (body.username || body.email || "").trim();
+        const password = body.password || "";
+
+        if (!username || !password) {
+            return response(400, { message: "Username and password are required" });
+        }
+
+        // Fetch user by username
+        const [rows] = await db.execute(
+            `SELECT * FROM users WHERE usrName = ? or usrEmail = ?`,
+            [username, username]
+        );
+
+        if (rows.length === 0) {
+            return response(401, { message: "Invalid username or password" });
+        }
+
+        const user = rows[0];
+
+        // Verify password with Argon2
+        const passwordHash = user.usrPassword || user.usrPass;
+        if (!passwordHash) {
+            return response(401, { message: "Invalid username or password" });
+        }
+
+        const isPasswordValid = await argon2.verify(passwordHash, password);
+
+        if (!isPasswordValid) {
+            return response(401, { message: "Invalid username or password" });
+        }
+
+        // Successful login
+        return response(200, {
+                message: "Login successful",
+                user: {
+                    id: user.id,
+                    username: user.usrName,
+                    email: user.usrEmail,
+                    fullName: user.usrFullName || ""
+                    // omit password from response!
+                }
+            });
+    } catch (err) {
+        console.error("Login failed", err);
+        return response(500, { message: "Internal server error" });
     }
-
-    const hashedPassword = await argon2.hash(body.usrPass);
-
-    const [result] = await db.execute(
-        "INSERT INTO users (usrPass, usrFullName, usrEmail) VALUES (?, ?, ?)",
-        [hashedPassword, body.usrFullName, body.usrEmail]
-    );
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "success" })
-    };
-};
-
-exports.getUsers = async () => {
-    const db = await getDBConnection();
-
-    const [rows] = await db.execute(`SELECT * from users`);
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify(rows)
-    };
-};
-
-exports.updateUser = async (event) => {
-    const db = await getDBConnection();
-    const body = JSON.parse(event.body);
-    const id = event.pathParameters.id;
-
-    await db.execute(
-        "UPDATE users SET name=?, email=? WHERE id=?",
-        [body.name, body.email, id]
-    );
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Updated" })
-    };
-};
-
-exports.deleteUser = async (event) => {
-    const db = await getDBConnection();
-    const id = event.pathParameters.id;
-
-    await db.execute(
-        "DELETE FROM users WHERE id=?",
-        [id]
-    );
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Deleted" })
-    };
 };
