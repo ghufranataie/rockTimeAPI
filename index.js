@@ -58,8 +58,21 @@ exports.handler = async (event) => {
 
         
         //Events
-        if (resource === '/events' && method === 'GET') {
-            return await events.getEvents(event);
+        if (resource === '/events') {
+            switch (method){
+                case 'GET':
+                    return await events.getEvents(event);
+                
+                case 'POST':
+                    return await events.createEvent(event)
+                
+                default:
+                    return {
+                        statusCode: 405,
+                        body: JSON.stringify({ message: "Method not allowed" })
+                    };
+            }
+            
         }
 
         //Founders

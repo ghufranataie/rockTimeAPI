@@ -66,40 +66,47 @@ exports.createEvent = async (event) => {
             return response(400, { message: "Invalid JSON body" });
         }
 
+        const {
+            shwTitle: title,
+            shwArtist: artist,
+            shwCategory: category,
+            shwDate: date,
+            shwTime: time,
+            shwLocation: location,
+            shwCity: city,
+            shwImage: image,
+            shwDetails: details,
+            shwTotalTickets: totalTickets,
+            shwTicketPrice: price
+        } = body;
+
         const db = await getDBConnection();
 
-        const title = body.shwTitle;
-        const artist = body.shwArtist;
+        await db.beginTransaction();
         
-        const company = body.shwCompanyName;
-        const category = body.shwCategory;
-        
-        const date = body.shwDate;
-        const time = body.shwTime;
-        
-        const location = body.shwLocation;
-        const city = body.shwCity;
-        
-        const image = body.shwImage;
-        const details = body.shwDetails;
-        const availability = body.shwAvailability;
-
-        
-        await db.execute(
-            `INSERT INTO shows (shwTitle, shwArtist, shwCompanyName, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails, shwAvailability)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [title, artist, company, category, date, time, location, city, image, details, availability]
+        const [showResult] = await db.execute(
+            `INSERT INTO shows (shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [title, artist, category, date, time, location, city, image, details]
         );
+        const shwID = showResult.insertId;
+
+        await db.execute(
+            `INSERT INTO showTickets (shtShowID, shtTotalTickets, shtPrice)
+            VALUES (?, ?, ?)`,
+            [shwID, totalTickets, price]
+        );
+
+        await db.commit();
     
         return response(201, {
-                message: "Registration Successful",
-                user: {
-                    fullName,
-                    username: username,
-                    email: email
-                }
-             });
+            message: "Show created successfully",
+            showID: shwID
+        });
     } catch (err) {
+        if (db) {
+            await db.rollback(); // rollback if any error happens
+        }
         console.error("Registration failed", err);
         return response(500, { message: "Internal server error" });
     }
