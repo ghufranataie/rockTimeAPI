@@ -60,6 +60,8 @@ exports.createEvent = async (event) => {
         return response(200, {});
     }
 
+    let db;
+
     try {
         const body = parseJsonBody(event?.body);
         if (!body) {
