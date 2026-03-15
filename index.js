@@ -28,36 +28,44 @@ exports.handler = async (event) => {
         if (resource === '/adminAuth' && method === 'POST') {
             try {
                 const body = JSON.parse(event.body);
-                const username = body.username;
-                const password = body.password;
+                const { username, password } = body;
 
                 if (!username || !password) {
-                    return {
-                        statusCode: 400,
-                        body: JSON.stringify({ message: "Username and password are required" })
-                    };
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: "Username and password are required" })
+                };
                 }
 
-                // Call your secret validation function
-                const isValid = await validateAdminSecret(username, password);
+                const admin = await validateAdminSecret(username, password);
 
-                if (isValid) {
-                    return {
-                        statusCode: 200,
-                        body: JSON.stringify({ message: "Admin authenticated successfully" })
-                    };
+                if (admin) {
+                return {
+                    statusCode: 200,
+                    headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS,POST"
+                    },
+                    body: JSON.stringify({ message: "Login successful", name: admin.NAME, email: admin.EMAIL })
+                };
                 } else {
-                    return {
-                        statusCode: 401,
-                        body: JSON.stringify({ message: "Invalid admin credentials" })
-                    };
+                return {
+                    statusCode: 401,
+                    headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS,POST"
+                    },
+                    body: JSON.stringify({ message: "Invalid credentials" })
+                };
                 }
 
             } catch (err) {
-                console.error("Error in /adminAuth:", err);
+                console.error("Error in /adminAuth handler:", err);
                 return {
-                    statusCode: 500,
-                    body: JSON.stringify({ message: "Internal server error" })
+                statusCode: 500,
+                body: JSON.stringify({ message: "Internal server error" })
                 };
             }
         }
