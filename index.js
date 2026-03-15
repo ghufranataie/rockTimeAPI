@@ -26,18 +26,40 @@ exports.handler = async (event) => {
         }
 
         if (resource === '/adminAuth' && method === 'POST') {
-            const body = JSON.parse(event.body);
-            const username = body.username;
-            const password = body.password;
-            if (!username || !password) {
+            try {
+                const body = JSON.parse(event.body);
+                const username = body.username;
+                const password = body.password;
+
+                if (!username || !password) {
+                    return {
+                        statusCode: 400,
+                        body: JSON.stringify({ message: "Username and password are required" })
+                    };
+                }
+
+                // Call your secret validation function
+                const isValid = await validateAdminSecret(username, password);
+
+                if (isValid) {
+                    return {
+                        statusCode: 200,
+                        body: JSON.stringify({ message: "Admin authenticated successfully" })
+                    };
+                } else {
+                    return {
+                        statusCode: 401,
+                        body: JSON.stringify({ message: "Invalid admin credentials" })
+                    };
+                }
+
+            } catch (err) {
+                console.error("Error in /adminAuth:", err);
                 return {
-                    statusCode: 400,
-                    body: JSON.stringify({ message: "Username and password are required" })
+                    statusCode: 500,
+                    body: JSON.stringify({ message: "Internal server error" })
                 };
             }
-            // Call your secret validation function
-            const result = await validateAdminSecret(username, password);
-            return result;
         }
 
         // Login User
