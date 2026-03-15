@@ -1,3 +1,22 @@
+// --- Add these at the very top ---
+const response = (statusCode, body) => ({
+    statusCode,
+    headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "OPTIONS,GET,POST"
+    },
+    body: JSON.stringify(body)
+});
+
+const parseJsonBody = (body) => {
+    try {
+        return JSON.parse(body);
+    } catch {
+        return null;
+    }
+};
+
 const getDBConnection = require('../config/db');
 
 exports.getEvents = async () => {
