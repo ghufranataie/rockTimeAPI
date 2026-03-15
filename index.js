@@ -3,6 +3,7 @@ const events = require('./events/event');
 const users = require('./user/users');
 const auth = require('./user/auth');
 const register = require('./user/register');
+const { validateAdminSecret } = require('./config/secret');
 
 exports.handler = async (event) => {
     const method = event.httpMethod;
@@ -24,6 +25,20 @@ exports.handler = async (event) => {
             }
         }
 
+        if (resource === '/adminAuth' && method === 'POST') {
+            const body = JSON.parse(event.body);
+            const username = body.username;
+            const password = body.password;
+            if (!username || !password) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({ message: "Username and password are required" })
+                };
+            }
+            // Call your secret validation function
+            const result = await validateAdminSecret(username, password);
+            return result;
+        }
 
         // Login User
         if (resource === '/auth') {
