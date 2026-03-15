@@ -54,13 +54,10 @@ exports.getEvents = async () => {
     }
 };
 
-
 exports.createEvent = async (event) => {
     if (event?.httpMethod === "OPTIONS") {
         return response(200, {});
     }
-
-    let db;
 
     try {
         const body = parseJsonBody(event?.body);
@@ -82,10 +79,8 @@ exports.createEvent = async (event) => {
             shwTicketPrice: price
         } = body;
 
-        db = await getDBConnection();
+        const db = await getDBConnection();
 
-        await db.beginTransaction();
-        
         const [showResult] = await db.execute(
             `INSERT INTO shows (shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -99,17 +94,73 @@ exports.createEvent = async (event) => {
             [shwID, totalTickets, price]
         );
 
-        await db.commit();
-    
         return response(201, {
             message: "Show created successfully",
             showID: shwID
         });
+
     } catch (err) {
-        if (db) {
-            await db.rollback(); // rollback if any error happens
-        }
         console.error("Registration failed", err);
-        return response(500, { message: "Internal server error" });
+        return response(500, {
+            message: "Internal server error",
+            error: err.message   // temporarily include error for debugging
+        });
     }
 };
+
+// exports.createEvent = async (event) => {
+//     if (event?.httpMethod === "OPTIONS") {
+//         return response(200, {});
+//     }
+
+//     let db;
+
+//     try {
+//         const body = parseJsonBody(event?.body);
+//         if (!body) {
+//             return response(400, { message: "Invalid JSON body" });
+//         }
+
+//         const {
+//             shwTitle: title,
+//             shwArtist: artist,
+//             shwCategory: category,
+//             shwDate: date,
+//             shwTime: time,
+//             shwLocation: location,
+//             shwCity: city,
+//             shwImage: image,
+//             shwDetails: details,
+//             shwTotalTickets: totalTickets,
+//             shwTicketPrice: price
+//         } = body;
+
+//         db = await getDBConnection();
+
+//         await db.beginTransaction();
+        
+//         const [showResult] = await db.execute(
+//             `INSERT INTO shows (shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails)
+//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//             [title, artist, category, date, time, location, city, image, details]
+//         );
+//         const shwID = showResult.insertId;
+
+//         await db.execute(
+//             `INSERT INTO showTickets (shtShowID, shtTotalTickets, shtPrice)
+//             VALUES (?, ?, ?)`,
+//             [shwID, totalTickets, price]
+//         );
+
+//         await db.commit();
+    
+//         return response(201, {
+//             message: "Show created successfully",
+//             showID: shwID
+//         });
+//     } catch (err) {
+//         console.error("Registration failed", err);
+//         await db.rollback();
+//         return response(500, { message: "Internal server error" });
+//     }
+// };
