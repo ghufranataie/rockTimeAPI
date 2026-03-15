@@ -82,7 +82,7 @@ exports.createEvent = async (event) => {
             shwTicketPrice: price
         } = body;
 
-        const db = await getDBConnection();
+        db = await getDBConnection();
 
         await db.beginTransaction();
         
