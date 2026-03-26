@@ -4,7 +4,7 @@ const secretsManager = new AWS.SecretsManager();
 
 async function getStripeSecrets() {
     const data = await secretsManager.getSecretValue({
-        SecretId: "stripeKeys"
+        SecretId: "stripekey"
     }).promise();
 
     return JSON.parse(data.SecretString);
