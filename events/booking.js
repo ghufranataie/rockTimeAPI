@@ -22,6 +22,19 @@ const parseJsonBody = (body) => {
 };
 
 /* -------------------------------
+   Stripe Initialization (cached)
+--------------------------------*/
+let stripe; // reuse across Lambda cold starts
+
+const getStripeInstance = async () => {
+    if (!stripe) {
+        const secrets = await getStripeSecrets();
+        stripe = new Stripe(secrets.STRIPE_SECRET_KEY);
+    }
+    return stripe;
+};
+
+/* -------------------------------
    Main Booking Function
 --------------------------------*/
 exports.payBooking = async (event) => {
@@ -105,8 +118,7 @@ exports.payBooking = async (event) => {
             }
         }
 
-        const secrets = await getStripeSecrets();
-        const stripe = new Stripe(secrets.STRIPE_SECRET_KEY);
+        const stripe = await getStripeInstance();
 
         const paymentIntent = await stripe.paymentIntents.create({
             amount: totalAmount * 100, // Stripe uses cents
@@ -121,22 +133,38 @@ exports.payBooking = async (event) => {
         const bokStatus = "Pending";
         const entryTime = new Date();
 
-        for (const item of bookingData) {
-            await db.execute(
-                `INSERT INTO bookings
-                (bokTicket, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    item.ticketID,
-                    item.seat,
-                    individual,
-                    bokStatus,
-                    method || "card",
-                    paymentIntent.id,
-                    entryTime
-                ]
-            );
-        }
+        const values = bookingData.map(item => [
+            item.ticketID,
+            item.seat,
+            individual,
+            bokStatus,
+            method || "card",
+            paymentIntent.id,
+            entryTime
+        ]);
+
+        // Batch insert
+        await db.query(
+            `INSERT INTO bookings (bokTicket, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime) VALUES ?`,
+            [values]
+        );
+
+        // for (const item of bookingData) {
+        //     await db.execute(
+        //         `INSERT INTO bookings
+        //         (bokTicket, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime)
+        //         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        //         [
+        //             item.ticketID,
+        //             item.seat,
+        //             individual,
+        //             bokStatus,
+        //             method || "card",
+        //             paymentIntent.id,
+        //             entryTime
+        //         ]
+        //     );
+        // }
 
         await db.commit();
         await db.end();
