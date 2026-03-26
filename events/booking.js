@@ -50,7 +50,6 @@ exports.payBooking = async (event) => {
         if (!individual) return response(400, { message: "Individual ID required" });
 
         db = await getDBConnection();
-        await db.beginTransaction();
 
         // -------------------------------
         // Step 1: Fetch latest tickets for all shows at once
@@ -105,7 +104,7 @@ exports.payBooking = async (event) => {
                 seatParams
             );
             if (existingSeats.length > 0) {
-                await db.rollback();
+                await db.end();
                 return response(400, { message: "Some seats are already booked", seats: existingSeats });
             }
         }
@@ -132,8 +131,8 @@ exports.payBooking = async (event) => {
                 b.ticketID,
                 b.seat,
                 individual,
-                "Pending",
-                method || "card",
+                "Booked",
+                method || "Card",
                 paymentIntent.id,
                 new Date()
             ]);
@@ -146,7 +145,6 @@ exports.payBooking = async (event) => {
             );
         }
 
-        await db.commit();
         await db.end();
 
         return response(200, {
@@ -157,7 +155,6 @@ exports.payBooking = async (event) => {
     } catch (err) {
         if (db) {
             console.error("Booking failed:", err);
-            await db.rollback();
             await db.end();
         }
 
