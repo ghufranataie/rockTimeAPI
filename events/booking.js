@@ -186,6 +186,8 @@
 //     }
 // };
 
+
+
 const Stripe = require("stripe");
 const getStripeSecrets = require("../config/stripeSecret");
 const getDBConnection = require("../config/db");
@@ -201,11 +203,16 @@ const response = (statusCode, body) => ({
 });
 
 const parseJsonBody = (body) => {
-    try { return JSON.parse(body); } 
-    catch { return null; }
+    try {
+        return JSON.parse(body);
+    } catch {
+        return null;
+    }
 };
 
-// Cache Stripe instance across cold starts
+// -------------------------------
+// Stripe Initialization (cached)
+// -------------------------------
 let stripe;
 const getStripeInstance = async () => {
     if (!stripe) {
@@ -215,6 +222,9 @@ const getStripeInstance = async () => {
     return stripe;
 };
 
+// -------------------------------
+// Main Booking Function
+// -------------------------------
 exports.payBooking = async (event) => {
     if (event?.httpMethod === "OPTIONS") return response(200, {});
 
@@ -225,88 +235,125 @@ exports.payBooking = async (event) => {
         if (!body) return response(400, { message: "Invalid JSON body" });
 
         const { bookings, bokIndividual: individual, bokMethod: method } = body;
-        if (!Array.isArray(bookings) || bookings.length === 0) 
+        if (!Array.isArray(bookings) || bookings.length === 0)
             return response(400, { message: "Bookings array required" });
-        if (!individual) 
-            return response(400, { message: "Individual ID required" });
+        if (!individual) return response(400, { message: "Individual ID required" });
 
         db = await getDBConnection();
         await db.beginTransaction();
 
-        // Step 1: Fetch latest tickets for all shows in parallel
-        const ticketPromises = bookings.map(b => 
-            db.execute(
-                `SELECT shtID, shtPrice FROM showTickets WHERE shtShowID = ? ORDER BY shtID DESC LIMIT 1`, 
-                [b.shwID]
-            )
+        // -------------------------------
+        // Step 1: Fetch latest tickets for all shows at once
+        // -------------------------------
+        const showIDs = bookings.map(b => b.shwID);
+        const placeholders = showIDs.map(() => "?").join(",");
+        const [ticketResults] = await db.execute(
+            `SELECT shtShowID, shtID, shtPrice 
+             FROM showTickets 
+             WHERE shtShowID IN (${placeholders}) 
+             ORDER BY shtShowID, shtID DESC`,
+            showIDs
         );
-        const ticketResults = await Promise.all(ticketPromises);
 
-        // Step 2: Validate seats in parallel
-        let totalAmount = 0;
+        const ticketMap = {};
+        ticketResults.forEach(t => {
+            if (!ticketMap[t.shtShowID]) ticketMap[t.shtShowID] = t;
+        });
+
+        // -------------------------------
+        // Step 2: Prepare booking data & total amount
+        // -------------------------------
         const bookingData = [];
+        let totalAmount = 0;
 
-        const seatCheckPromises = [];
+        for (const b of bookings) {
+            const ticket = ticketMap[b.shwID];
+            if (!ticket) throw new Error(`Ticket not found for show ${b.shwID}`);
 
-        bookings.forEach((b, i) => {
-            const [ticketResult] = ticketResults[i];
-            if (!ticketResult.length) throw new Error(`Ticket not found for show ${b.shwID}`);
-
-            const ticketID = ticketResult[0].shtID;
-            const ticketPrice = ticketResult[0].shtPrice;
+            if (!Array.isArray(b.seatNumber) || b.seatNumber.length === 0)
+                throw new Error(`Show ${b.shwID} must have seat numbers`);
 
             b.seatNumber.forEach(seat => {
-                // Add seat validation promise
-                seatCheckPromises.push(
-                    db.execute(
-                        `SELECT bokID FROM bookings WHERE bokTicket = ? AND bokSeatNumber = ? AND bokStatus = 'Booked'`,
-                        [ticketID, seat]
-                    ).then(([res]) => {
-                        if (res.length > 0) throw new Error(`Seat ${seat} for show ${b.shwID} already booked`);
-                        bookingData.push({ ticketID, seat, price: ticketPrice, shwID: b.shwID });
-                        totalAmount += ticketPrice;
-                    })
-                );
+                bookingData.push({
+                    ticketID: ticket.shtID,
+                    seat,
+                    price: ticket.shtPrice,
+                    shwID: b.shwID
+                });
+                totalAmount += ticket.shtPrice;
             });
-        });
+        }
 
-        // Wait for all seat checks
-        await Promise.all(seatCheckPromises);
+        // -------------------------------
+        // Step 3: Check booked seats in one query
+        // -------------------------------
+        if (bookingData.length > 0) {
+            const seatConditions = bookingData.map(() => "(bokTicket = ? AND bokSeatNumber = ? AND bokStatus = 'Booked')").join(" OR ");
+            const seatParams = bookingData.flatMap(b => [b.ticketID, b.seat]);
+            const [existingSeats] = await db.execute(
+                `SELECT bokTicket, bokSeatNumber FROM bookings WHERE ${seatConditions}`,
+                seatParams
+            );
+            if (existingSeats.length > 0) {
+                await db.rollback();
+                return response(400, { message: "Some seats are already booked", seats: existingSeats });
+            }
+        }
 
-        // Step 3: Create Stripe payment intent
-        const stripe = await getStripeInstance();
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: totalAmount * 100,
+        // -------------------------------
+        // Step 4: Create Stripe PaymentIntent
+        // -------------------------------
+        const stripeInstance = await getStripeInstance();
+        const paymentIntent = await stripeInstance.paymentIntents.create({
+            amount: totalAmount * 100, // in cents
             currency: "cad",
             payment_method_types: ["card"],
-            metadata: { individual, bookings: JSON.stringify(bookingData.map(b => ({ showID: b.shwID, seat: b.seat }))) }
+            metadata: {
+                individual,
+                bookings: JSON.stringify(bookingData.map(b => ({ showID: b.shwID, seat: b.seat })))
+            }
         });
 
-        // Step 4: Batch insert all bookings
-        const entryTime = new Date();
-        const values = bookingData.map(b => [
-            b.ticketID,
-            b.seat,
-            individual,
-            "Pending",
-            method || "card",
-            paymentIntent.id,
-            entryTime
-        ]);
+        // -------------------------------
+        // Step 5: Batch insert bookings
+        // -------------------------------
+        if (bookingData.length > 0) {
+            const values = bookingData.map(b => [
+                b.ticketID,
+                b.seat,
+                individual,
+                "Pending",
+                method || "card",
+                paymentIntent.id,
+                new Date()
+            ]);
 
-        await db.query(
-            `INSERT INTO bookings (bokTicket, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime) VALUES ?`,
-            [values]
-        );
+            await db.query(
+                `INSERT INTO bookings 
+                 (bokTicket, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime) 
+                 VALUES ?`,
+                [values]
+            );
+        }
 
         await db.commit();
         await db.end();
 
-        return response(200, { message: "Payment intent created", clientSecret: paymentIntent.client_secret });
+        return response(200, {
+            message: "Payment intent created",
+            clientSecret: paymentIntent.client_secret
+        });
 
     } catch (err) {
-        if (db) { await db.rollback(); await db.end(); }
-        console.error("Booking failed:", err);
-        return response(500, { message: "Internal server error", error: err.message });
+        if (db) {
+            console.error("Booking failed:", err);
+            await db.rollback();
+            await db.end();
+        }
+
+        return response(500, {
+            message: "Internal server error",
+            error: err.message
+        });
     }
 };
