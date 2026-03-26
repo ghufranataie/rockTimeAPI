@@ -1,0 +1,28 @@
+{
+  "name": "rocktimeapi",
+  "version": "1.0.0",
+  "description": "node -v\r npm -v\r aws --version\r git --version",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "aws-sdk": "^2.1693.0",
+    "axios": "^1.13.6",
+    "mysql2": "^3.19.0",
+    "stripe": "^20.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghufranataie/rockTimeAPI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ghufranataie/rockTimeAPI/issues"
+  },
+  "homepage": "https://github.com/ghufranataie/rockTimeAPI#readme"
+}
