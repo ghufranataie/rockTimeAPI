@@ -1,7 +1,7 @@
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 
 const secretsClient = new SecretsManagerClient({ region: 'us-east-1' });
-const SECRET_ID = process.env.STRIPE_SECRET_ID || 'showtime228/stripe';
+const SECRET_ID = process.env.STRIPE_SECRET_ID || 'stripekey';
 
 // In-memory cache so we don't call Secrets Manager on every invocation
 let cachedSecrets = null;
