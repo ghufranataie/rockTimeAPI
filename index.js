@@ -52,8 +52,10 @@ exports.handler = async (event) => {
         }
 
 
-        // Stripe Checkout – create a Checkout Session, return { sessionId, url }
-        if (resource === '/checkout') {
+        // Stripe Checkout – /booking and /checkout both work
+        // /booking = existing API Gateway resource (no AWS Console changes needed)
+        // /checkout = future resource if added
+        if (resource === '/booking' || resource === '/checkout') {
             switch (method) {
                 case 'POST':
                     return withCors(await checkout.createSession(event));
