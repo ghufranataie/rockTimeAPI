@@ -4,7 +4,8 @@ const users = require('./user/users');
 const auth = require('./user/auth');
 const register = require('./user/register');
 const tickets = require('./events/tickets');
-const booking = require('./events/booking');
+const checkout = require('./events/checkout');
+const webhook = require('./events/webhook');
 const { validateAdminSecret } = require('./config/secret');
 
 const corsHeaders = {
@@ -51,18 +52,25 @@ exports.handler = async (event) => {
         }
 
 
-        // Booking
-        if (resource === '/booking') {
+        // Stripe Checkout – create a Checkout Session, return { sessionId, url }
+        if (resource === '/checkout') {
             switch (method) {
                 case 'POST':
-                    return withCors(await booking.payBooking(event));
-                
+                    return withCors(await checkout.createSession(event));
+
                 default:
                     return withCors({
                         statusCode: 405,
-                        body: JSON.stringify({ message: "Method not allowed" })
+                        body: JSON.stringify({ message: 'Method not allowed' })
                     });
             }
+        }
+
+        // Stripe Webhook – verifies signature, saves bookings to DB
+        // NOTE: Do NOT wrap with withCors; Stripe doesn't need CORS headers,
+        //       and the raw body must reach the handler unmodified.
+        if (resource === '/webhook') {
+            return await webhook.handleWebhook(event);
         }
 
 
