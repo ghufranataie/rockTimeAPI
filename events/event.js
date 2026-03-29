@@ -35,7 +35,7 @@ exports.getEvents = async () => {
         for (let show of shows) {
             // Fetch tickets for the show
             const [tickets] = await db.execute(
-                `SELECT shwID, shwTotalTickets as totalTickets, shwTicketPrice as shtPrice FROM shows WHERE shwID = ?`,
+                `SELECT shwID, shwTotalTickets as shtTotalTickets, shwTicketPrice as shtPrice FROM shows WHERE shwID = ?`,
                 [show.shwID]
             );
 
