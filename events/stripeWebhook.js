@@ -11,7 +11,7 @@ let stripe, stripeWebhookSecret;
 const getStripeInstance = async () => {
   if (!stripe || !stripeWebhookSecret) {
     const secretResponse = await secretsManager.send(
-      new GetSecretValueCommand({ SecretId: "YOUR_SECRET_NAME" }) // replace with your secret name
+      new GetSecretValueCommand({ SecretId: "stripekey" }) // replace with your secret name
     );
 
     const secretObj = JSON.parse(secretResponse.SecretString);
