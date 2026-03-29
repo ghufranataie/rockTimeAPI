@@ -1,5 +1,5 @@
 const Stripe = require("stripe");
-// const getStripeSecrets = require("../config/stripeSecret");
+const getStripeSecrets = require("../config/stripeSecret");
 
 const response = (statusCode, body) => ({
     statusCode,
