@@ -7,6 +7,7 @@ const tickets = require('./events/tickets');
 const checkout = require('./events/checkout');
 const webhook = require('./events/webhook');
 const { validateAdminSecret } = require('./config/secret');
+const { payBooking } = require('./events/booking');
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
@@ -58,7 +59,8 @@ exports.handler = async (event) => {
         if (resource === '/booking' || resource === '/checkout') {
             switch (method) {
                 case 'POST':
-                    return withCors(await checkout.createSession(event));
+                    // return withCors(await checkout.createSession(event));
+                    return withCors(await payBooking(event));
 
                 default:
                     return withCors({
