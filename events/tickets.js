@@ -34,13 +34,12 @@ exports.getSingleUserTickets = async (event) => {
                 u.usrFullName as bookingBy,
                 bokSeatNumber as seatNo,
                 bokPayMethod as payMethod,
-                shtPrice as price,
+                shwTicketPrice as price,
                 bokPayRef as payRef,
                 bokStatus as bookingStatus
             from bookings b
             join users u on u.usrID = b.bokIndividual
-            join showTickets st on st.shtID = b.bokTicket
-            join shows s on s.shwID = st.shtShowID
+            join shows s on s.shwID = b.bokShow
             where u.usrID = ?`,
             [id]
         )
@@ -78,13 +77,12 @@ exports.getSingleShowTickets = async (event) => {
                 u.usrFullName as bookingBy,
                 bokSeatNumber as seatNo,
                 bokPayMethod as payMethod,
-                shtPrice as price,
+                shwTotalTickets as price,
                 bokPayRef as payRef,
                 bokStatus as bookingStatus
             from bookings b
             join users u on u.usrID = b.bokIndividual
-            join showTickets st on st.shtID = b.bokTicket
-            join shows s on s.shwID = st.shtShowID
+            join shows s on s.shwID = b.bokShow
             where s.shwID = ?`,
             [id]
         )
@@ -117,13 +115,12 @@ exports.getRecentTicketBooking = async (event) => {
                 u.usrFullName as bookingBy,
                 bokSeatNumber as seatNo,
                 bokPayMethod as payMethod,
-                shtPrice as price,
+                shwTotalTickets as price,
                 bokPayRef as payRef,
                 bokStatus as bookingStatus
             from bookings b
             join users u on u.usrID = b.bokIndividual
-            join showTickets st on st.shtID = b.bokTicket
-            join shows s on s.shwID = st.shtShowID
+            join shows s on s.shwID = b.bokShow
             order by bokID DESC`
         )
 
