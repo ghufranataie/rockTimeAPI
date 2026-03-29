@@ -42,7 +42,7 @@ exports.payBooking = async (event) => {
         const { items, userID: userID, successUrl: successUrl, cancelUrl: cancelUrl} = body;
         if (!Array.isArray(items) || items.length === 0)
             return response(400, { message: "Bookings array required" });
-        if (!userID) return response(400, { message: "userID required", body: body});
+        if (!userID) return response(400, { message: "userID required"});
         
 
         let totalAmount = 0;
