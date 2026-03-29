@@ -42,7 +42,7 @@ exports.getEvents = async () => {
             // Fetch bookings for each ticket
             for (let ticket of tickets) {
                 const [bookings] = await db.execute(
-                    `SELECT bokSeatNumber, bokStatus FROM bookings WHERE bokTicket = ?`,
+                    `SELECT bokSeatNumber, bokStatus FROM bookings WHERE bokShow = ?`,
                     [ticket.shwID]
                 );
                 ticket.bookings = bookings; // attach bookings to ticket
