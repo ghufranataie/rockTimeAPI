@@ -5,7 +5,7 @@ const auth = require('./user/auth');
 const register = require('./user/register');
 const tickets = require('./events/tickets');
 const checkout = require('./events/checkout');
-const webhook = require('./events/webhook');
+const webhook = require('./events/stripeWebhook');
 const { validateAdminSecret } = require('./config/secret');
 const { payBooking } = require('./events/booking');
 
