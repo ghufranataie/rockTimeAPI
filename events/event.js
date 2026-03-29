@@ -25,12 +25,11 @@ exports.getEvents = async () => {
         const [shows] = await db.execute(`select shwID, shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails,
             case
                 when s.shwDate < curdate() then 'Passed'
-                when SUM(CASE WHEN bokStatus = 'Booked' THEN 1 ELSE 0 END) < SUM(st.shtTotalTickets) then 'Available'
+                when SUM(CASE WHEN bokStatus = 'Booked' THEN 1 ELSE 0 END) < shwTotalTickets then 'Available'
             else 'Housefull' end AS availability
         from shows s
-        left join showTickets st on st.shtShowID = s.shwID
-        left join bookings bk on bk.bokTicket = st.shtID
-        group by shwID order by shwID DESC`);
+        left join bookings b on b.bokShow = s.shwID
+        group by shwID order by shwID DESC;`);
 
         // Step 2: Fetch tickets and bookings for each show
         for (let show of shows) {
