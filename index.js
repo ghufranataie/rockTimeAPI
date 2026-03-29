@@ -59,7 +59,6 @@ exports.handler = async (event) => {
         if (resource === '/booking' || resource === '/checkout') {
             switch (method) {
                 case 'POST':
-                    // return withCors(await checkout.createSession(event));
                     return withCors(await payBooking(event));
 
                 default:
@@ -74,7 +73,16 @@ exports.handler = async (event) => {
         // NOTE: Do NOT wrap with withCors; Stripe doesn't need CORS headers,
         //       and the raw body must reach the handler unmodified.
         if (resource === '/webhook') {
-            return await webhook.handleWebhook(event);
+            switch (method){
+                case 'POST':
+                    return await webhook.stripeWebhook(event);
+
+                default:
+                    return {
+                        statusCode: 405,
+                        body: JSON.stringify({ message: 'Method not allowed' })
+                    };
+            }
         }
 
 
