@@ -1,5 +1,5 @@
 const Stripe = require("stripe");
-const getStripeSecrets = require("../config/stripeSecret");
+// const getStripeSecrets = require("../config/stripeSecret");
 
 const response = (statusCode, body) => ({
     statusCode,
@@ -19,16 +19,16 @@ const parseJsonBody = (body) => {
     }
 };
 
-let stripe;
-let cachedSecrets;
+// let stripe;
+// let cachedSecrets;
 
-const getStripeInstance = async () => {
-    if (!stripe) {
-        if (!cachedSecrets) cachedSecrets = await getStripeSecrets();
-        stripe = new Stripe(cachedSecrets.STRIPE_SECRET_KEY);
-    }
-    return stripe;
-};
+// const getStripeInstance = async () => {
+//     if (!stripe) {
+//         if (!cachedSecrets) cachedSecrets = await getStripeSecrets();
+//         stripe = new Stripe(cachedSecrets.STRIPE_SECRET_KEY);
+//     }
+//     return stripe;
+// };
 
 exports.payBooking = async (event) => {
     if (event?.httpMethod === "OPTIONS") return response(200, {});
