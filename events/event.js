@@ -100,17 +100,11 @@ exports.createEvent = async (event) => {
         const db = await getDBConnection();
 
         const [showResult] = await db.execute(
-            `INSERT INTO shows (shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [title, artist, category, date, time, location, city, image, details]
+            `INSERT INTO shows (shwTitle, shwArtist, shwCategory, shwDate, shwTime, shwLocation, shwCity, shwImage, shwDetails, shwTotalTickets, shwTicketPrice)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [title, artist, category, date, time, location, city, image, details, totalTickets, price]
         );
         const shwID = showResult.insertId;
-
-        await db.execute(
-            `INSERT INTO showTickets (shtShowID, shtTotalTickets, shtPrice)
-            VALUES (?, ?, ?)`,
-            [shwID, totalTickets, price]
-        );
 
         return response(201, {
             message: "Show created successfully",
