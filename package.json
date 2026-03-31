@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.1019.0",
+    "@aws-sdk/client-ses": "^3.1021.0",
     "argon2": "^0.44.0",
     "aws-sdk": "^2.1693.0",
     "mysql2": "^3.19.0",

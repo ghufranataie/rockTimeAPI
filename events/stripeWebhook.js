@@ -1,9 +1,11 @@
 // lambdaStripeWebhook.js
 const getDBConnection = require("../config/db");
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 const Stripe = require("stripe");
 
 const secretsManager = new SecretsManagerClient({ region: "us-east-1" });
+const sesClient = new SESClient({ region: 'us-east-1' });
 
 let stripe, stripeWebhookSecret;
 
@@ -99,6 +101,22 @@ exports.stripeWebhook = async (event) => {
       }
 
       console.log(`Booking inserted for user ${realUserID}, payment ${session.id}`);
+
+      if (email) {
+        try {
+          await sesClient.send(new SendEmailCommand({
+            Source: 'noreply@yourdomain.com',  // верифицированный домен в SES
+            Destination: { ToAddresses: [email] },
+            Message: {
+              Subject: { Data: 'Your RockTime Booking Confirmation' },
+              Body: { Text: { Data: `Booking confirmed! Payment ref: ${session.id}` } }
+            }
+          }));
+          console.log(`Confirmation email sent via SES to ${email}`);
+        } catch (emailErr) {
+          console.error(`Failed to send confirmation email to ${email}:`, emailErr);
+        }
+      }
     } catch (err) {
       console.error("DB insert failed:", err.stack || err);
       return { statusCode: 500, body: "Database error" };
