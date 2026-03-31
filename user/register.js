@@ -73,8 +73,29 @@ exports.registerUser = async (event) => {
             [email]
         );
 
+        const hashedPassword = await argon2.hash(password, { type: argon2.argon2id });
+
         if (rows.length > 0) {
-            return response(409, { message: "Email already exists" });
+            const existing = rows[0];
+            // If the account exists but has no password (created via Stripe guest checkout)
+            // allow them to claim the account by setting the password.
+            if (!existing.usrPassword && !existing.usrPass) {
+                await db.execute(
+                    "UPDATE users SET usrPassword = ?, usrFullName = ? WHERE usrID = ?",
+                    [hashedPassword, fullName, existing.usrID]
+                );
+                return response(201, {
+                    message: "Account claimed and registration successful",
+                    user: {
+                        id: existing.usrID,
+                        fullName,
+                        username: existing.usrName,
+                        email: email
+                    }
+                });
+            } else {
+                return response(409, { message: "Email already exists" });
+            }
         }
 
         // Generate unique username
@@ -92,9 +113,7 @@ exports.registerUser = async (event) => {
             username = generateRandomUsername();
         }
 
-        const hashedPassword = await argon2.hash(password, { type: argon2.argon2id });
-        
-        await db.execute(
+        const [result] = await db.execute(
             "INSERT INTO users (usrName, usrPassword, usrFullName, usrEmail) VALUES (?, ?, ?, ?)",
             [username, hashedPassword, fullName, email]
         );
@@ -102,6 +121,7 @@ exports.registerUser = async (event) => {
         return response(201, {
                 message: "Registration successful",
                 user: {
+                    id: result.insertId,
                     fullName,
                     username: username,
                     email: email

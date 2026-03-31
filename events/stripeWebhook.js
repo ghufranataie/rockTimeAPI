@@ -66,18 +66,39 @@ exports.stripeWebhook = async (event) => {
     try {
       db = await getDBConnection();
 
+      let realUserID = parseInt(userID, 10);
+      const email = session.customer_details?.email || session.customer_email;
+
+      if ((!realUserID || realUserID === 1) && email) {
+          const [userRows] = await db.query('SELECT usrID FROM users WHERE usrEmail = ?', [email]);
+          if (userRows.length > 0) {
+              realUserID = userRows[0].usrID;
+          } else {
+              const name = session.customer_details?.name || email.split('@')[0];
+              const [insertResult] = await db.query(
+                  'INSERT INTO users (usrName, usrEmail, usrFullName, usrStatus) VALUES (?, ?, ?, 1)',
+                  [email.split('@')[0], email, name]
+              );
+              realUserID = insertResult.insertId;
+          }
+      }
+
+      if (!realUserID) {
+          realUserID = 1; // absolute fallback
+      }
+
       for (const item of parsedItems) {
         for (const seat of item.seatNumbers) {
           await db.query(
             `INSERT INTO bookings 
              (bokShow, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime)
              VALUES (?, ?, ?, 'Booked', 'Card', ?, NOW())`,
-            [item.eventId, seat, userID, session.id]
+            [item.eventId, seat, realUserID, session.id]
           );
         }
       }
 
-      console.log(`Booking inserted for user ${userID}, payment ${session.id}`);
+      console.log(`Booking inserted for user ${realUserID}, payment ${session.id}`);
     } catch (err) {
       console.error("DB insert failed:", err.stack || err);
       return { statusCode: 500, body: "Database error" };
