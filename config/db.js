@@ -9,11 +9,14 @@ async function getDbConnection() {
     const response = await client.send(command);
     const secret = JSON.parse(response.SecretString);
     
-    connection = await mysql.createConnection({
+    connection = mysql.createPool({
         host: secret.host,
         user: secret.username,
         password: secret.password,
-        database: secret.dbname
+        database: secret.dbname,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
     });
     return connection;
 }

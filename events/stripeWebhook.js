@@ -81,8 +81,6 @@ exports.stripeWebhook = async (event) => {
     } catch (err) {
       console.error("DB insert failed:", err.stack || err);
       return { statusCode: 500, body: "Database error" };
-    } finally {
-      if (db) await db.end();
     }
   } else {
     console.log("Event type not handled:", stripeEvent.type);

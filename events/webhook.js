@@ -167,8 +167,6 @@ exports.handleWebhook = async (event) => {
             body: JSON.stringify({ error: 'Webhook processing failed' }),
         };
     } finally {
-        if (db) {
-            try { await db.end(); } catch (_) { /* ignore */ }
-        }
+        // do not end the pooled connection
     }
 };
