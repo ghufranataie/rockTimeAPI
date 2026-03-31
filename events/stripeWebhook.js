@@ -44,13 +44,13 @@ exports.stripeWebhook = async (event) => {
     return { statusCode: 400, body: `Webhook Error: ${err.message}` };
   }
 
-  // Handle payment_intent.succeeded
-  if (stripeEvent.type === "payment_intent.succeeded") {
-    const paymentIntent = stripeEvent.data.object;
-    const { userID, items } = paymentIntent.metadata || {};
+  // Handle checkout.session.completed
+  if (stripeEvent.type === "checkout.session.completed") {
+    const session = stripeEvent.data.object;
+    const { userID, items } = session.metadata || {};
 
     if (!userID || !items) {
-      console.error("Missing metadata fields:", paymentIntent.metadata);
+      console.error("Missing metadata fields:", session.metadata);
       return { statusCode: 400, body: "Missing metadata fields" };
     }
 
@@ -72,12 +72,12 @@ exports.stripeWebhook = async (event) => {
             `INSERT INTO bookings 
              (bokShow, bokSeatNumber, bokIndividual, bokStatus, bokPayMethod, bokPayRef, bokEntryTime)
              VALUES (?, ?, ?, 'Booked', 'Card', ?, NOW())`,
-            [item.eventId, seat, userID, paymentIntent.id]
+            [item.eventId, seat, userID, session.id]
           );
         }
       }
 
-      console.log(`Booking inserted for user ${userID}, payment ${paymentIntent.id}`);
+      console.log(`Booking inserted for user ${userID}, payment ${session.id}`);
     } catch (err) {
       console.error("DB insert failed:", err.stack || err);
       return { statusCode: 500, body: "Database error" };
