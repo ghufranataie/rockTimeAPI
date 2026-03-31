@@ -45,14 +45,32 @@ exports.payBooking = async (event) => {
         const totalAmount = items.reduce((sum, item) => sum + item.seatNumbers.length * item.pricePerSeat, 0);
 
         const stripeInstance = await getStripeInstance();
-        const paymentIntent = await stripeInstance.paymentIntents.create({
-            amount: Math.round(totalAmount * 100),
-            currency: "cad",
+        
+        const lineItems = items.map(item => ({
+            price_data: {
+                currency: "cad",
+                product_data: {
+                    name: "Event Ticket",
+                    description: `Event ID: ${item.eventId} | Seats: ${item.seatNumbers.join(", ")}`,
+                },
+                unit_amount: Math.round(item.pricePerSeat * 100),
+            },
+            quantity: item.seatNumbers.length,
+        }));
+
+        const session = await stripeInstance.checkout.sessions.create({
             payment_method_types: ["card"],
-            metadata: { userID, items: JSON.stringify(items) }
+            mode: "payment",
+            line_items: lineItems,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            metadata: { 
+                userID: String(userID), 
+                items: JSON.stringify(items) 
+            }
         });
 
-        return response(200, { message: "Payment intent created", clientSecret: paymentIntent.client_secret });
+        return response(200, { message: "Checkout session created", sessionId: session.id, url: session.url });
 
     } catch (err) {
         console.error(err); // log full error
