@@ -117,14 +117,67 @@ exports.stripeWebhook = async (event) => {
 
 
 
+      // if (email) {
+      //   try {
+      //     await sesClient.send(new SendEmailCommand({
+      //       Source: 'gh.aazad@gmail.com', // replace with your verified SES email
+      //       Destination: { ToAddresses: [email] },
+      //       Message: {
+      //         Subject: { Data: 'Your RockTime Booking Confirmation' },
+      //         Body: { Text: { Data: `Booking confirmed! Payment ref: ${session.id}` } }
+      //       }
+      //     }));
+      //     console.log(`Confirmation email sent via SES to ${email}`);
+      //   } catch (emailErr) {
+      //     console.error(`Failed to send confirmation email to ${email}:`, emailErr);
+      //   }
+      // }
+
       if (email) {
         try {
           await sesClient.send(new SendEmailCommand({
-            Source: 'gh.aazad@gmail.com', // replace with your verified SES email
+            Source: 'gh.aazad@gmail.com', // your verified SES email
             Destination: { ToAddresses: [email] },
             Message: {
-              Subject: { Data: 'Your RockTime Booking Confirmation' },
-              Body: { Text: { Data: `Booking confirmed! Payment ref: ${session.id}` } }
+              Subject: { Data: '🎉 Your RockTime Booking Confirmation!' },
+              Body: {
+                Html: { Data: `
+                  <html>
+                    <body style="font-family: Arial, sans-serif; background-color: #f4f4f7; margin:0; padding:0;">
+                      <table align="center" width="600" style="background-color:#ffffff; padding:20px; border-radius:8px;">
+                        <tr>
+                          <td style="text-align:center; padding-bottom:20px;">
+                            <h1 style="color:#4a90e2;">RockTime Booking Confirmed!</h1>
+                            <p style="font-size:16px; color:#333;">Thank you for booking with RockTime. 🎸</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:20px; background-color:#f4f4f7; border-radius:8px;">
+                            <p style="font-size:16px; color:#333;">
+                              <strong>Payment Reference:</strong> ${session.id} <br>
+                              <strong>Date:</strong> ${new Date().toLocaleDateString()} <br>
+                              <strong>Booking Details:</strong> Your selected seats are reserved.
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="text-align:center; padding-top:30px;">
+                            <a href="http://rocktime-webapp.s3-website-us-east-1.amazonaws.com/account" 
+                              style="background-color:#4a90e2; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">
+                              View Your Booking
+                            </a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="text-align:center; padding-top:20px; font-size:12px; color:#888;">
+                            RockTime Inc. | 123 Music Ave, Toronto, ON
+                          </td>
+                        </tr>
+                      </table>
+                    </body>
+                  </html>
+                ` }
+              }
             }
           }));
           console.log(`Confirmation email sent via SES to ${email}`);
@@ -132,6 +185,8 @@ exports.stripeWebhook = async (event) => {
           console.error(`Failed to send confirmation email to ${email}:`, emailErr);
         }
       }
+
+
     } catch (err) {
       console.error("DB insert failed:", err.stack || err);
       return { statusCode: 500, body: "Database error" };
