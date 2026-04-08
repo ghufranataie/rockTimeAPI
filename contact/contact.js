@@ -1,7 +1,7 @@
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 
 const sesClient = new SESClient({ region: "us-east-1" });
-const RECEIVER_EMAIL = "ghufranataie@hotmail.com";
+const RECEIVER_EMAIL = "gh.aazad@gmail.com";
 
 exports.contactUs = async (event, context) => {
     if (event.httpMethod !== "POST") {
