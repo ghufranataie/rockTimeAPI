@@ -51,7 +51,7 @@ exports.stripeWebhook = async (event) => {
     const session = stripeEvent.data.object;
     const { userID, items } = session.metadata || {};
 
-    if (!userID || !items) {
+    if (!items) {
       console.error("Missing metadata fields:", session.metadata);
       return { statusCode: 400, body: "Missing metadata fields" };
     }
