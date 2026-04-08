@@ -139,7 +139,7 @@ exports.stripeWebhook = async (event) => {
             Source: 'gh.aazad@gmail.com', // your verified SES email
             Destination: { ToAddresses: [email] },
             Message: {
-              Subject: { Data: '🎉 Your RockTime Booking Confirmation!' },
+              Subject: { Data: '🎉 Your RockTime Booking Confirmation & Tickets!' },
               Body: {
                 Html: { Data: `
                   <html>
@@ -156,7 +156,7 @@ exports.stripeWebhook = async (event) => {
                             <p style="font-size:16px; color:#333;">
                               <strong>Payment Reference:</strong> ${session.id} <br>
                               <strong>Date:</strong> ${new Date().toLocaleDateString()} <br>
-                              <strong>Booking Details:</strong> Your selected seats are reserved.
+                              <strong>Reserved Seats:</strong> ${allSeats.join(', ')}
                             </p>
                           </td>
                         </tr>
@@ -164,7 +164,7 @@ exports.stripeWebhook = async (event) => {
                           <td style="text-align:center; padding-top:30px;">
                             <a href="http://rocktime-webapp.s3-website-us-east-1.amazonaws.com/account" 
                               style="background-color:#4a90e2; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">
-                              View Your Booking
+                              View Your Tickets
                             </a>
                           </td>
                         </tr>
