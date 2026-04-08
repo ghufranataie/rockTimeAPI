@@ -105,7 +105,7 @@ exports.stripeWebhook = async (event) => {
       if (email) {
         try {
           await sesClient.send(new SendEmailCommand({
-            Source: 'noreply@yourdomain.com',  // верифицированный домен в SES
+            Source: 'gataie@myseneca.ca', // replace with your verified SES email
             Destination: { ToAddresses: [email] },
             Message: {
               Subject: { Data: 'Your RockTime Booking Confirmation' },
