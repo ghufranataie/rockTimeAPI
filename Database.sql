@@ -62,7 +62,7 @@ VALUES
 create table bookings(
    bokID int primary key auto_increment,
    bokShow int,
-   bokSeatNumber tinyint,
+   bokSeatNumber smallint,
    bokIndividual int,
    bokStatus enum('Reserved', 'Booked', 'Cancel'),
    bokPayMethod varchar(20),
