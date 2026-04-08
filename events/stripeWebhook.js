@@ -107,7 +107,8 @@ exports.stripeWebhook = async (event) => {
 
 
       // Send SNS notification and SES email
-      const message = `Booking confirmed for ${email}. Seat number: ${seatNumbers}`;
+      const allSeats = parsedItems.flatMap(item => item.seatNumbers);
+      const message = `Booking confirmed for ${email}. Seat numbers: ${allSeats.join(', ')}`;
       await sns.send(new PublishCommand({
         TopicArn: "arn:aws:sns:us-east-1:309237749474:BookingNotifications:3d788c12-b05f-4d28-a9c3-1527f7d86d8b", // replace with your SNS topic ARN
         Message: message,
