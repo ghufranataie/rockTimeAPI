@@ -24,7 +24,7 @@ exports.contactUs = async (event, context) => {
         Source: RECEIVER_EMAIL,
         Destination: { ToAddresses: [RECEIVER_EMAIL] },
         Message: {
-            Subject: { Data: `Contact Form: ${subject}` },
+            Subject: { Data: `Contact Us Form: ${subject}` },
             Body: {
                 Html: {
                     Data: `
