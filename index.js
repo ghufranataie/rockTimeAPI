@@ -7,6 +7,7 @@ const tickets = require('./events/tickets');
 const webhook = require('./events/stripeWebhook');
 const { validateAdminSecret } = require('./config/secret');
 const { payBooking } = require('./events/booking');
+const contactus = require('./contact/contact');
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
@@ -33,7 +34,6 @@ exports.handler = async (event) => {
             body: JSON.stringify({ message: "OK" })
         });
     }
-    
     
 
     try {
@@ -83,8 +83,6 @@ exports.handler = async (event) => {
                     };
             }
         }
-
-
 
         if (resource === '/adminAuth' && method === 'POST') {
             try {
@@ -173,6 +171,11 @@ exports.handler = async (event) => {
         //Founders
         if (resource === '/founders' && method === 'GET') {
             return withCors(await founders.getFounders(event));
+        }
+
+        //Contact US
+        if (resource === '/contact' && method === 'POST') {
+            return withCors(await contactus.contactUs(event));
         }
 
         // read query parameters safely
