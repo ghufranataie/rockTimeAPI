@@ -2,10 +2,12 @@
 const getDBConnection = require("../config/db");
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
+const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 const Stripe = require("stripe");
 
 const secretsManager = new SecretsManagerClient({ region: "us-east-1" });
 const sesClient = new SESClient({ region: 'us-east-1' });
+const sns = new SNSClient({ region: 'us-east-1' });
 
 let stripe, stripeWebhookSecret;
 
@@ -101,6 +103,18 @@ exports.stripeWebhook = async (event) => {
       }
 
       console.log(`Booking inserted for user ${realUserID}, payment ${session.id}`);
+
+
+
+      // Send SNS notification and SES email
+      const message = `Booking confirmed for ${email}. Seat number: ${seatNumber}`;
+      await sns.send(new PublishCommand({
+        TopicArn: "arn:aws:sns:us-east-1:309237749474:BookingNotifications:3d788c12-b05f-4d28-a9c3-1527f7d86d8b", // replace with your SNS topic ARN
+        Message: message,
+        Subject: "Ticket Booking Confirmation"
+      }));
+
+
 
       if (email) {
         try {
