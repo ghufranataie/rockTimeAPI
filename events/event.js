@@ -102,21 +102,23 @@ exports.createEvent = async (event) => {
         // Handle Base64 Image Upload to S3
         if (image && image.startsWith("data:image/")) {
             try {
-                const matches = image.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
-                if (matches && matches.length === 3) {
-                    const ext = matches[1];
-                    const buffer = Buffer.from(matches[2], 'base64');
-                    // Ensure valid extension for image format
-                    const type = ext === 'jpeg' ? 'jpeg' : ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : 'jpg';
-                    const fileName = `shows/evt-${Date.now()}.${type}`;
-                    
-                    const uploadParams = {
-                        Bucket: "rocktime-assets",
-                        Key: fileName,
-                        Body: buffer,
-                        ContentEncoding: 'base64',
-                        ContentType: `image/${type}`
-                    };
+                // Safely extract the base64 part, ignoring any middle parameters
+                const base64Data = image.split(",")[1];
+                // Extract extension from "data:image/jpeg;..." -> "jpeg"
+                let rawExt = image.split(";")[0].split("/")[1] || "jpeg";
+                // Ensure valid extension for image format
+                const type = rawExt === 'jpeg' ? 'jpeg' : rawExt === 'png' ? 'png' : rawExt === 'webp' ? 'webp' : 'jpg';
+                const fileName = `shows/evt-${Date.now()}.${type}`;
+                
+                const buffer = Buffer.from(base64Data, 'base64');
+                
+                const uploadParams = {
+                    Bucket: "rocktime-assets",
+                    Key: fileName,
+                    Body: buffer,
+                    ContentEncoding: 'base64',
+                    ContentType: `image/${type}`
+                };
                     
                     await s3.putObject(uploadParams).promise();
                     
