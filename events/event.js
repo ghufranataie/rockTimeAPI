@@ -18,6 +18,8 @@ const parseJsonBody = (body) => {
 };
 
 const getDBConnection = require('../config/db');
+const AWS = require('aws-sdk');
+const s3 = new AWS.S3({ region: "us-east-1" });
 
 exports.getEvents = async () => {
     try {
@@ -83,7 +85,7 @@ exports.createEvent = async (event) => {
             return response(400, { message: "Invalid JSON body" });
         }
 
-        const {
+        let {
             shwTitle: title,
             shwArtist: artist,
             shwCategory: category,
@@ -96,6 +98,36 @@ exports.createEvent = async (event) => {
             shwTotalTickets: totalTickets,
             shwTicketPrice: price
         } = body;
+
+        // Handle Base64 Image Upload to S3
+        if (image && image.startsWith("data:image/")) {
+            try {
+                const matches = image.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
+                if (matches && matches.length === 3) {
+                    const ext = matches[1];
+                    const buffer = Buffer.from(matches[2], 'base64');
+                    // Ensure valid extension for image format
+                    const type = ext === 'jpeg' ? 'jpeg' : ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : 'jpg';
+                    const fileName = `shows/evt-${Date.now()}.${type}`;
+                    
+                    const uploadParams = {
+                        Bucket: "rocktime-assets",
+                        Key: fileName,
+                        Body: buffer,
+                        ContentEncoding: 'base64',
+                        ContentType: `image/${type}`
+                    };
+                    
+                    await s3.putObject(uploadParams).promise();
+                    
+                    // Update the image variable to hold the S3 URL
+                    image = `https://rocktime-assets.s3.us-east-1.amazonaws.com/${fileName}`;
+                }
+            } catch (err) {
+                console.error("S3 Image Upload Exception", err);
+                return response(500, { message: "Failed to upload local image to S3", error: err.message });
+            }
+        }
 
         const db = await getDBConnection();
 
