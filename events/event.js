@@ -124,7 +124,6 @@ exports.createEvent = async (event) => {
                     
                     // Update the image variable to hold the S3 URL
                     image = `https://rocktime-assets.s3.us-east-1.amazonaws.com/${fileName}`;
-                }
             } catch (err) {
                 console.error("S3 Image Upload Exception", err);
                 return response(500, { message: "Failed to upload local image to S3", error: err.message });
